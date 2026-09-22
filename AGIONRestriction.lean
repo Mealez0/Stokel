@@ -18,7 +18,7 @@ def variableMask (n v : Nat) : Nat := Id.run do
       m := m + (1 <<< a)
   return m
 
-def computeCosts (n : Nat) (maxC : Nat := 40) : Array Nat := Id.run do
+def computeCosts (n : Nat) (maxC : Nat := 15) : Array Nat := Id.run do
   let F := 1 <<< (1 <<< n)
   let ALL := F - 1
   let sentinel := maxC + 1
@@ -97,7 +97,7 @@ def oddParity4 : Nat := Id.run do
 def verificationCheck : Bool := Id.run do
   let c3 := computeCosts 3
   let c4 := computeCosts 4
-  if !(allCostsResolved c3 41 && allCostsResolved c4 41) then return false
+  if !(allCostsResolved c3 16 && allCostsResolved c4 16) then return false
   if maxCost c3 != 9 || maxCost c4 != 15 then return false
 
   let mut eq : Array Nat := #[]
@@ -121,4 +121,3 @@ theorem AGION_exact_finite_restriction_certificate :
   native_decide
 
 #print axioms AGION_exact_finite_restriction_certificate
-#eval verificationCheck
