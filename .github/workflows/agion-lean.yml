@@ -1,7 +1,7 @@
 name: AGION Lean Verification
 on:
   push:
-    branches: [main, agion-lean-verify]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -15,8 +15,14 @@ jobs:
         run: |
           curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain leanprover/lean4:v4.19.0
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
-      - name: Lean kernel check
+      - name: Generate finite certificate
+        shell: bash
+        run: |
+          g++ -O3 -std=c++20 generate_lean_certificate.cpp -o generate_certificate
+          ./generate_certificate > AGIONGeneratedCertificate.lean
+          wc -c AGIONGeneratedCertificate.lean
+      - name: Lean formal certificate check
         shell: bash
         run: |
           lean --version
-          lean AGIONRestriction.lean
+          lean AGIONGeneratedCertificate.lean
