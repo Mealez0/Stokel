@@ -1,4 +1,4 @@
-import Std.Tactic.NativeDecide
+import Lean
 
 /-
 AGION finite restriction lemma verification.
