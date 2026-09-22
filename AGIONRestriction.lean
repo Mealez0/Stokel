@@ -86,7 +86,12 @@ def maxCost (c : Array Nat) : Nat := c.foldl Nat.max 0
 def oddParity4 : Nat := Id.run do
   let mut p := 0
   for a in [0:16] do
-    if a.countOnes % 2 = 1 then p := p + (1 <<< a)
+    let ones :=
+      (if Nat.testBit a 0 then 1 else 0) +
+      (if Nat.testBit a 1 then 1 else 0) +
+      (if Nat.testBit a 2 then 1 else 0) +
+      (if Nat.testBit a 3 then 1 else 0)
+    if ones % 2 = 1 then p := p + (1 <<< a)
   return p
 
 def verificationCheck : Bool := Id.run do
