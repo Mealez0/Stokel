@@ -81,28 +81,6 @@ def restrictionSum (c3 : Array Nat) (f : Nat) : Nat := Id.run do
 def allCostsResolved (c : Array Nat) (sentinel : Nat) : Bool :=
   c.all (fun x => x < sentinel)
 
-def boundCheck : Bool := Id.run do
-  let c3 := computeCosts 3
-  let c4 := computeCosts 4
-  if !(allCostsResolved c3 41 && allCostsResolved c4 41) then return false
-  for f in [0:65536] do
-    let L := c4[f]!
-    if L > 0 then
-      let S := restrictionSum c3 f
-      if 5*S > 24*L then return false
-  return true
-
-def equalityMasks : Array Nat := Id.run do
-  let c3 := computeCosts 3
-  let c4 := computeCosts 4
-  let mut out : Array Nat := #[]
-  for f in [0:65536] do
-    let L := c4[f]!
-    if L > 0 then
-      let S := restrictionSum c3 f
-      if 5*S = 24*L then out := out.push f
-  return out
-
 def maxCost (c : Array Nat) : Nat := c.foldl Nat.max 0
 
 def oddParity4 : Nat := Id.run do
@@ -111,34 +89,31 @@ def oddParity4 : Nat := Id.run do
     if a.countOnes % 2 = 1 then p := p + (1 <<< a)
   return p
 
-def parityRestrictionCosts : Array Nat := Id.run do
+def verificationCheck : Bool := Id.run do
   let c3 := computeCosts 3
-  let mut out : Array Nat := #[]
+  let c4 := computeCosts 4
+  if !(allCostsResolved c3 41 && allCostsResolved c4 41) then return false
+  if maxCost c3 != 9 || maxCost c4 != 15 then return false
+
+  let mut eq : Array Nat := #[]
+  for f in [0:65536] do
+    let L := c4[f]!
+    if L > 0 then
+      let S := restrictionSum c3 f
+      if 5*S > 24*L then return false
+      if 5*S = 24*L then eq := eq.push f
+  if eq != #[27030, 38505] then return false
+
+  if oddParity4 != 27030 then return false
+  if c4[oddParity4]! != 15 then return false
   for v in [0:4] do
     for b in [0:2] do
-      out := out.push c3[restrict4to3 oddParity4 v b]!
-  return out
+      if c3[restrict4to3 oddParity4 v b]! != 9 then return false
+  return true
 
-theorem all_4var_restrictions_shrink_three_fifths : boundCheck = true := by
+theorem AGION_exact_finite_restriction_certificate :
+    verificationCheck = true := by
   native_decide
 
-theorem equality_cases_exactly_parity_and_complement :
-    equalityMasks = #[27030, 38505] := by
-  native_decide
-
-theorem exact_maximum_costs :
-    maxCost (computeCosts 3) = 9 ∧ maxCost (computeCosts 4) = 15 := by
-  native_decide
-
-theorem parity_certificate :
-    oddParity4 = 27030 ∧
-    (computeCosts 4)[oddParity4]! = 15 ∧
-    parityRestrictionCosts = #[9,9,9,9,9,9,9,9] := by
-  native_decide
-
-#eval ("boundCheck=" ++ toString boundCheck)
-#eval ("equalityMasks=" ++ toString equalityMasks)
-#eval ("max3=" ++ toString (maxCost (computeCosts 3)) ++
-       " max4=" ++ toString (maxCost (computeCosts 4)))
-#eval ("oddParity4=" ++ toString oddParity4 ++
-       " restrictions=" ++ toString parityRestrictionCosts)
+#print axioms AGION_exact_finite_restriction_certificate
+#eval verificationCheck
