@@ -18,12 +18,20 @@ vector<int> costs(int N,int MAXC=15){
   }
   return cost;
 }
+string hexCosts(const vector<int>& c){ static const char*h="0123456789abcdef"; string s; s.reserve(c.size()); for(int x:c)s+=h[x]; return s; }
 int main(){
-  auto c3=costs(3),c4=costs(4);
+  auto C3=costs(3),C4=costs(4);
   cout<<"import Lean\n\n";
-  auto emit=[&](const char*name,const vector<int>&c){cout<<"def "<<name<<" : Array Nat := #[";for(size_t i=0;i<c.size();++i){if(i)cout<<",";cout<<c[i];}cout<<"]\n\n";};
-  emit("c3",c3);emit("c4",c4);
+  cout<<"def c3hex : String := \""<<hexCosts(C3)<<"\"\n";
+  cout<<"def c4hex : String := \""<<hexCosts(C4)<<"\"\n\n";
   cout<<R"LEAN(
+def hexCost (s : String) (i : Nat) : Nat :=
+  let n := (s.toUTF8[i]!).toNat
+  if n <= 57 then n - 48 else n - 87
+
+def cost3 (i : Nat) : Nat := hexCost c3hex i
+def cost4 (i : Nat) : Nat := hexCost c4hex i
+
 def restrict4to3 (f v val : Nat) : Nat := Id.run do
   let mut g := 0
   for a3 in [0:8] do
@@ -40,7 +48,7 @@ def restrictionSum (f : Nat) : Nat := Id.run do
   let mut s := 0
   for v in [0:4] do
     for b in [0:2] do
-      s := s + c3[restrict4to3 f v b]!
+      s := s + cost3 (restrict4to3 f v b)
   return s
 
 def oddParity4 : Nat := Id.run do
@@ -55,19 +63,23 @@ def oddParity4 : Nat := Id.run do
   return p
 
 def certificateCheck : Bool := Id.run do
-  if c3.size != 256 || c4.size != 65536 then return false
+  if c3hex.toUTF8.size != 256 || c4hex.toUTF8.size != 65536 then return false
+  let mut max3 := 0
+  for i in [0:256] do max3 := Nat.max max3 (cost3 i)
+  let mut max4 := 0
   let mut eq : Array Nat := #[]
   for f in [0:65536] do
-    let L := c4[f]!
+    let L := cost4 f
+    max4 := Nat.max max4 L
     if L > 0 then
       let S := restrictionSum f
       if 5*S > 24*L then return false
       if 5*S = 24*L then eq := eq.push f
+  if max3 != 9 || max4 != 15 then return false
   if eq != #[27030,38505] then return false
-  if c3.foldl Nat.max 0 != 9 || c4.foldl Nat.max 0 != 15 then return false
-  if oddParity4 != 27030 || c4[oddParity4]! != 15 then return false
+  if oddParity4 != 27030 || cost4 oddParity4 != 15 then return false
   for v in [0:4] do for b in [0:2] do
-    if c3[restrict4to3 oddParity4 v b]! != 9 then return false
+    if cost3 (restrict4to3 oddParity4 v b) != 9 then return false
   return true
 
 theorem AGION_certificate_checked : certificateCheck = true := by
