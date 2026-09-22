@@ -24,5 +24,6 @@ jobs:
       - name: Lean formal certificate check
         shell: bash
         run: |
+          ulimit -s unlimited
           lean --version
           lean AGIONGeneratedCertificate.lean
